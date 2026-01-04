@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/apps/tetris_weather_app/melos_tetris_weather.iml" filepath="$PROJECT_DIR$/apps/tetris_weather_app/melos_tetris_weather.iml" />
+      <module fileurl="file://$PROJECT_DIR$/melos_tetris_weather_workspace.iml" filepath="$PROJECT_DIR$/melos_tetris_weather_workspace.iml" />
+    </modules>
+  </component>
+</project>

@@ -1,0 +1,9 @@
+name: tetris_weather_workspace
+description: "Tetris Weather monorepo workspace (apps + packages)"
+publish_to: "none"
+
+environment:
+  sdk: ^3.5.4
+
+dev_dependencies:
+  melos: ^4.1.0

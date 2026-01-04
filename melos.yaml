@@ -1,0 +1,16 @@
+name: tetris_weather_workspace
+sdkPath: .fvm/flutter_sdk
+packages:
+  - apps/**
+  - packages/**
+
+scripts:
+  analyze:
+    run: melos exec -c 1 -- fvm flutter analyze
+    description: 使用 FVM 的 Flutter 分析所有包
+  format:
+    run: melos exec -c 1 -- fvm dart format .
+    description: 统一代码格式（Dart）
+  bootstrap:
+    run: melos bootstrap
+    description: 安装并链接所有包依赖
