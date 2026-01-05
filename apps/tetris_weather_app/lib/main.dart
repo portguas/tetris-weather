@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'widgets/pixel_cloud.dart';
 import 'widgets/pixel_moon.dart';
 import 'widgets/pixel_sun.dart';
 
@@ -99,6 +100,8 @@ class _SunnyWeatherPageState extends State<SunnyWeatherPage> {
                             letterSpacing: 0.2,
                           ),
                         ),
+                        const SizedBox(height: 10),
+                        const _CloudBadge(),
                         const SizedBox(height: 16),
                         _TemperatureCard(
                           temps: temps,
@@ -129,6 +132,54 @@ class _SunnyWeatherPageState extends State<SunnyWeatherPage> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CloudBadge extends StatelessWidget {
+  const _CloudBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Row(
+        children: [
+          const PixelCloud(
+            size: 86,
+            drift: 0.9,
+            intensity: 0.9,
+            duration: Duration(milliseconds: 3200),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '云层平稳飘移',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                '像素云块风速 3m/s · 湿度 46%',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.68),
+                  fontSize: 12,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
         ],
       ),
