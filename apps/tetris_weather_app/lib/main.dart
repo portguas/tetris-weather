@@ -42,15 +42,6 @@ class SunnyWeatherPage extends StatefulWidget {
 }
 
 class _SunnyWeatherPageState extends State<SunnyWeatherPage> {
-  final _boardKey = GlobalKey<_TetrisBoardState>();
-  int _clearedLines = 0;
-
-  void _handleCleared(int total) {
-    setState(() {
-      _clearedLines = total;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFFFFB84C);
@@ -81,7 +72,6 @@ class _SunnyWeatherPageState extends State<SunnyWeatherPage> {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final boardHeight = max(360.0, constraints.maxHeight * 0.48);
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: ConstrainedBox(
@@ -119,18 +109,6 @@ class _SunnyWeatherPageState extends State<SunnyWeatherPage> {
                           accent: accent,
                           background: secondary,
                           highlight: highlight,
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: boardHeight,
-                          child: _BoardSection(
-                            accent: accent,
-                            secondary: secondary,
-                            background: background,
-                            clearedLines: _clearedLines,
-                            boardKey: _boardKey,
-                            onCleared: _handleCleared,
-                          ),
                         ),
                       ],
                     ),
@@ -332,7 +310,7 @@ class _InfoPagerState extends State<_InfoPager> {
   @override
   void initState() {
     super.initState();
-    _controller = PageController(viewportFraction: 0.9);
+    _controller = PageController(viewportFraction: 0.94);
   }
 
   @override
@@ -382,7 +360,7 @@ class _InfoPagerState extends State<_InfoPager> {
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
@@ -405,7 +383,7 @@ class _InfoPagerState extends State<_InfoPager> {
       child: Column(
         children: [
           SizedBox(
-            height: 190,
+            height: 240,
             child: PageView.builder(
               controller: _controller,
               itemCount: pages.length,
@@ -568,24 +546,24 @@ class _RetroInfoPage extends StatelessWidget {
           const SizedBox(height: 8),
           Expanded(
             child: Center(
-              child: graphic ??
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _PixelText(
-                        text: value,
-                        color: Colors.white,
-                        pixel: 10,
-                      ),
-                      const SizedBox(width: 8),
-                      _PixelText(
-                        text: unit,
-                        color: color,
-                        pixel: 6,
-                      ),
-                    ],
-                  ),
+            child: graphic ??
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _PixelText(
+                      text: value,
+                      color: Colors.white,
+                      pixel: 14,
+                    ),
+                    const SizedBox(width: 8),
+                    _PixelText(
+                      text: unit,
+                      color: color,
+                      pixel: 8,
+                    ),
+                  ],
+                ),
             ),
           ),
           const SizedBox(height: 6),
@@ -828,255 +806,6 @@ class _PixelGlyphPainter extends CustomPainter {
         pixel != oldDelegate.pixel;
   }
 }
-
-class _BoardSection extends StatelessWidget {
-  const _BoardSection({
-    required this.accent,
-    required this.secondary,
-    required this.background,
-    required this.clearedLines,
-    required this.boardKey,
-    required this.onCleared,
-  });
-
-  final Color accent;
-  final Color secondary;
-  final Color background;
-  final int clearedLines;
-  final GlobalKey<_TetrisBoardState> boardKey;
-  final ValueChanged<int> onCleared;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            secondary.withOpacity(0.9),
-            secondary.withOpacity(0.62),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.12), width: 2),
-        boxShadow: [
-          const BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 12,
-            offset: Offset(0, 8),
-          ),
-          BoxShadow(
-            color: accent.withOpacity(0.12),
-            blurRadius: 18,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Tetris 晴空场',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.94),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                ),
-              ),
-              const SizedBox(width: 10),
-              _BlockChip(label: '轻松消行', color: accent),
-              const SizedBox(width: 8),
-              const _BlockChip(label: '手动可控', color: Colors.white24),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: AspectRatio(
-              aspectRatio: 10 / 16,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: background.withOpacity(0.88),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.16),
-                    width: 2,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x55000000),
-                      blurRadius: 14,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(6),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: TetrisBoard(
-                    key: boardKey,
-                    accent: accent,
-                    onLinesCleared: onCleared,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(
-                '今日已消行：$_lineLabel',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                ),
-              ),
-              const SizedBox(width: 12),
-              _BlockChip(
-                label: '阳光加速',
-                color: Colors.white.withOpacity(0.14),
-              ),
-              const Spacer(),
-              Icon(Icons.bolt, color: accent, size: 18),
-              const SizedBox(width: 4),
-              Text(
-                '体感 27°C',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _ControlRow(accent: accent, boardKey: boardKey),
-        ],
-      ),
-    );
-  }
-
-  String get _lineLabel => clearedLines == 0 ? '准备中' : '$clearedLines 行';
-}
-
-class _ControlRow extends StatelessWidget {
-  const _ControlRow({
-    required this.accent,
-    required this.boardKey,
-  });
-
-  final Color accent;
-  final GlobalKey<_TetrisBoardState> boardKey;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _ControlButton(
-          icon: Icons.chevron_left,
-          label: '左移',
-          onTap: () => boardKey.currentState?.moveLeft(),
-        ),
-        _ControlButton(
-          icon: Icons.rotate_right,
-          label: '旋转',
-          onTap: () => boardKey.currentState?.rotate(),
-        ),
-        _ControlButton(
-          icon: Icons.chevron_right,
-          label: '右移',
-          onTap: () => boardKey.currentState?.moveRight(),
-        ),
-        _ControlButton(
-          icon: Icons.arrow_downward,
-          label: '下落',
-          onTap: () => boardKey.currentState?.softDrop(),
-        ),
-        _ControlButton(
-          icon: Icons.flash_on,
-          label: '直落',
-          highlight: accent,
-          onTap: () => boardKey.currentState?.hardDrop(),
-        ),
-      ],
-    );
-  }
-}
-
-class _ControlButton extends StatelessWidget {
-  const _ControlButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.highlight,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color? highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = highlight ?? Colors.white.withOpacity(0.8);
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white.withOpacity(0.08),
-                  Colors.white.withOpacity(0.03),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: color.withOpacity(0.7), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
-                  offset: const Offset(0, 4),
-                  blurRadius: 8,
-                ),
-                BoxShadow(
-                  color: color.withOpacity(0.16),
-                  offset: const Offset(0, 0),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _TemperatureCard extends StatelessWidget {
   const _TemperatureCard({
     required this.temps,
