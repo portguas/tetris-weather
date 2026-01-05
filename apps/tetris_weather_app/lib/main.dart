@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'widgets/pixel_moon.dart';
+import 'widgets/pixel_sun.dart';
 
 void main() {
   runApp(const TetrisWeatherApp());
@@ -57,70 +59,78 @@ class _SunnyWeatherPageState extends State<SunnyWeatherPage> {
     final temps = <double>[17, 19, 23, 27, 30, 31, 28, 24];
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF0B1226),
-              Color(0xFF0A172F),
-              Color(0xFF0C1C3B),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final boardHeight = max(360.0, constraints.maxHeight * 0.48);
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _Header(accent: accent, highlight: highlight),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '晴朗 · 方块轻盈落下，自动消行代表稳态天气',
-                        style: TextStyle(
-                          color: Color(0xFF9BB2D9),
-                          fontSize: 14,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _TemperatureCard(
-                        temps: temps,
-                        accent: accent,
-                        background: secondary,
-                      ),
-                      const SizedBox(height: 12),
-                      const _SunriseSunsetRow(
-                        accent: accent,
-                        background: secondary,
-                        highlight: highlight,
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: boardHeight,
-                        child: _BoardSection(
-                          accent: accent,
-                          secondary: secondary,
-                          background: background,
-                          clearedLines: _clearedLines,
-                          boardKey: _boardKey,
-                          onCleared: _handleCleared,
-                        ),
-                      ),
-                    ],
-                  ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0B1226),
+                    Color(0xFF0A172F),
+                    Color(0xFF0C1C3B),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              );
-            },
+              ),
+            ),
           ),
-        ),
+          const Positioned.fill(child: _PixelBackdrop()),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final boardHeight = max(360.0, constraints.maxHeight * 0.48);
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _Header(accent: accent, highlight: highlight),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '晴朗 · 方块轻盈落下，自动消行代表稳态天气',
+                          style: TextStyle(
+                            color: Color(0xFF9BB2D9),
+                            fontSize: 14,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _TemperatureCard(
+                          temps: temps,
+                          accent: accent,
+                          background: secondary,
+                        ),
+                        const SizedBox(height: 12),
+                        const _SunriseSunsetRow(
+                          accent: accent,
+                          background: secondary,
+                          highlight: highlight,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: boardHeight,
+                          child: _BoardSection(
+                            accent: accent,
+                            secondary: secondary,
+                            background: background,
+                            clearedLines: _clearedLines,
+                            boardKey: _boardKey,
+                            onCleared: _handleCleared,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -173,10 +183,74 @@ class _Header extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        const _BlockSun(),
+        const PixelSun(),
       ],
     );
   }
+}
+
+class _PixelBackdrop extends StatelessWidget {
+  const _PixelBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: CustomPaint(
+        painter: _PixelBackgroundPainter(),
+      ),
+    );
+  }
+}
+
+class _PixelBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double cell = 22;
+    const double dot = 6;
+    final dotPaint = Paint()..color = const Color(0xFF122447).withOpacity(0.32);
+    final altPaint = Paint()..color = const Color(0xFF0D1A31).withOpacity(0.35);
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.03)
+      ..strokeWidth = 1;
+
+    for (double y = 0; y < size.height; y += cell) {
+      for (double x = 0; x < size.width; x += cell) {
+        final bool alt = ((x + y) ~/ cell) % 2 == 0;
+        canvas.drawRect(
+          Rect.fromLTWH(x + 4, y + 4, dot, dot),
+          alt ? dotPaint : altPaint,
+        );
+      }
+    }
+
+    for (double y = 0; y <= size.height; y += cell) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+    for (double x = 0; x <= size.width; x += cell) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+
+    final glow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF56E6A5).withOpacity(0.14),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 1.0],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(size.width * 0.78, size.height * 0.28),
+          radius: size.shortestSide * 0.8,
+        ),
+      );
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      glow,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BoardSection extends StatelessWidget {
@@ -201,14 +275,27 @@ class _BoardSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: secondary.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
-        boxShadow: const [
-          BoxShadow(
+        gradient: LinearGradient(
+          colors: [
+            secondary.withOpacity(0.9),
+            secondary.withOpacity(0.62),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.12), width: 2),
+        boxShadow: [
+          const BoxShadow(
             color: Color(0x33000000),
-            blurRadius: 16,
+            blurRadius: 12,
             offset: Offset(0, 8),
+          ),
+          BoxShadow(
+            color: accent.withOpacity(0.12),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -236,19 +323,25 @@ class _BoardSection extends StatelessWidget {
           Expanded(
             child: AspectRatio(
               aspectRatio: 10 / 16,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        background.withOpacity(0.8),
-                        background.withOpacity(0.4),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: background.withOpacity(0.88),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.16),
+                    width: 2,
                   ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x55000000),
+                      blurRadius: 14,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(6),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
                   child: TetrisBoard(
                     key: boardKey,
                     accent: accent,
@@ -361,11 +454,30 @@ class _ControlButton extends StatelessWidget {
         child: GestureDetector(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color.withOpacity(0.4)),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.08),
+                  Colors.white.withOpacity(0.03),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: color.withOpacity(0.7), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.35),
+                  offset: const Offset(0, 4),
+                  blurRadius: 8,
+                ),
+                BoxShadow(
+                  color: color.withOpacity(0.16),
+                  offset: const Offset(0, 0),
+                  blurRadius: 8,
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -408,13 +520,48 @@ class _TemperatureCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: background.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
+        gradient: LinearGradient(
+          colors: [
+            background.withOpacity(0.9),
+            background.withOpacity(0.65),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 12,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(
+              7,
+              (i) => Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: i.isEven
+                        ? accent.withOpacity(0.9)
+                        : Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -536,6 +683,12 @@ class _SunriseSunsetRow extends StatelessWidget {
             accent: accent,
             background: background,
             icon: Icons.east,
+            graphic: const PixelSun(
+              size: 70,
+              spread: 1.3,
+              intensity: 0.9,
+              duration: Duration(milliseconds: 2200),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -546,6 +699,12 @@ class _SunriseSunsetRow extends StatelessWidget {
             accent: highlight,
             background: background,
             icon: Icons.west,
+            graphic: const PixelMoon(
+              size: 70,
+              spread: 1.3,
+              intensity: 1.05,
+              duration: Duration(milliseconds: 2600),
+            ),
           ),
         ),
       ],
@@ -560,6 +719,7 @@ class _SunTile extends StatelessWidget {
     required this.accent,
     required this.background,
     required this.icon,
+    this.graphic,
   });
 
   final String title;
@@ -567,19 +727,37 @@ class _SunTile extends StatelessWidget {
   final Color accent;
   final Color background;
   final IconData icon;
+  final Widget? graphic;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: background.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        gradient: LinearGradient(
+          colors: [
+            background.withOpacity(0.85),
+            background.withOpacity(0.65),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 2),
       ),
       child: Row(
         children: [
-          _BlockIcon(accent: accent, icon: icon),
+          SizedBox(
+            width: 72,
+            height: 72,
+            child: Center(
+              child: graphic ??
+                  _BlockIcon(
+                    accent: accent,
+                    icon: icon,
+                  ),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -638,9 +816,23 @@ class _BlockIcon extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: accent.withOpacity(0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withOpacity(0.6)),
+        gradient: LinearGradient(
+          colors: [
+            accent.withOpacity(0.3),
+            accent.withOpacity(0.14),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: accent.withOpacity(0.7), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withOpacity(0.24),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Icon(icon, color: accent),
     );
@@ -857,42 +1049,55 @@ class _TetrisBoardPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final cell = size.width / _boardWidth;
-    final paint = Paint();
+    final boardRect = Rect.fromLTWH(0, 0, size.width, size.height);
 
-    // Grid background
-    paint.color = Colors.white.withOpacity(0.04);
+    canvas.drawRect(
+      boardRect,
+      Paint()..color = const Color(0xFF0E1B33),
+    );
+
+    for (int y = 0; y < _boardHeight; y++) {
+      for (int x = 0; x < _boardWidth; x++) {
+        final rect = Rect.fromLTWH(x * cell, y * cell, cell, cell);
+        final bool even = (x + y).isEven;
+        canvas.drawRect(
+          rect,
+          Paint()..color = Colors.white.withOpacity(even ? 0.06 : 0.03),
+        );
+      }
+    }
+
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.05)
+      ..strokeWidth = 1;
     for (int x = 0; x <= _boardWidth; x++) {
       final dx = x * cell;
-      canvas.drawLine(Offset(dx, 0), Offset(dx, size.height), paint);
+      canvas.drawLine(Offset(dx, 0), Offset(dx, size.height), gridPaint);
     }
     for (int y = 0; y <= _boardHeight; y++) {
       final dy = y * cell;
-      canvas.drawLine(Offset(0, dy), Offset(size.width, dy), paint);
+      canvas.drawLine(Offset(0, dy), Offset(size.width, dy), gridPaint);
     }
 
-    // Ghost projection
     for (final block in piece.blocks) {
       final x = (pieceX + block.x) * cell;
       final y = (ghostY + block.y) * cell;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, y, cell, cell),
-        const Radius.circular(4),
-      );
-      canvas.drawRRect(
+      final rect = Rect.fromLTWH(x, y, cell, cell).deflate(cell * 0.1);
+      canvas.drawRect(
         rect,
         Paint()
-          ..color = accent.withOpacity(0.18)
+          ..color = accent.withOpacity(0.16)
           ..style = PaintingStyle.fill,
       );
-      canvas.drawRRect(
-        rect,
+      canvas.drawRect(
+        rect.deflate(cell * 0.06),
         Paint()
-          ..color = accent.withOpacity(0.28)
-          ..style = PaintingStyle.stroke,
+          ..color = accent.withOpacity(0.38)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2,
       );
     }
 
-    // Settled blocks
     for (int y = 0; y < _boardHeight; y++) {
       for (int x = 0; x < _boardWidth; x++) {
         final color = board[y][x];
@@ -901,7 +1106,6 @@ class _TetrisBoardPainter extends CustomPainter {
       }
     }
 
-    // Active piece
     for (final block in piece.blocks) {
       final x = pieceX + block.x;
       final y = pieceY + block.y;
@@ -917,28 +1121,35 @@ class _TetrisBoardPainter extends CustomPainter {
     int y,
     Color color,
   ) {
-    final rect = Rect.fromLTWH(
-      x * cell,
-      y * cell,
-      cell,
-      cell,
+    final rect = Rect.fromLTWH(x * cell, y * cell, cell, cell);
+    canvas.drawRect(rect, Paint()..color = color);
+
+    final highlight = Paint()..color = Colors.white.withOpacity(0.22);
+    final shadow = Paint()..color = Colors.black.withOpacity(0.32);
+
+    canvas.drawRect(
+      Rect.fromLTWH(rect.left, rect.top, cell, cell * 0.18),
+      highlight,
     );
-    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(5));
-    final blockPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          color,
-          Color.alphaBlend(Colors.white.withOpacity(0.2), color),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(rect);
-    canvas.drawRRect(rrect, blockPaint);
-    canvas.drawRRect(
-      rrect,
+    canvas.drawRect(
+      Rect.fromLTWH(rect.left, rect.top, cell * 0.18, cell),
+      highlight,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(rect.right - cell * 0.18, rect.top, cell * 0.18, cell),
+      shadow,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(rect.left, rect.bottom - cell * 0.18, cell, cell * 0.18),
+      shadow,
+    );
+
+    canvas.drawRect(
+      rect.deflate(cell * 0.22),
       Paint()
         ..color = Colors.white.withOpacity(0.12)
-        ..style = PaintingStyle.stroke,
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
     );
   }
 
@@ -1105,68 +1316,6 @@ class _TemperatureCurvePainter extends CustomPainter {
   }
 }
 
-class _BlockSun extends StatelessWidget {
-  const _BlockSun();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
-      ),
-      child: CustomPaint(
-        size: const Size(84, 84),
-        painter: _BlockSunPainter(),
-      ),
-    );
-  }
-}
-
-class _BlockSunPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cell = size.width / 7;
-    final center = Offset(size.width / 2, size.height / 2);
-    const sunColor = Color(0xFFFFB84C);
-    const rayColor = Color(0xFFFFD28F);
-
-    void drawBlock(Offset offset, Color color) {
-      final rect = Rect.fromCenter(
-        center: offset,
-        width: cell,
-        height: cell,
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
-        Paint()..color = color,
-      );
-    }
-
-    // Core
-    drawBlock(center, sunColor);
-    drawBlock(center.translate(-cell, 0), sunColor);
-    drawBlock(center.translate(cell, 0), sunColor);
-    drawBlock(center.translate(0, -cell), sunColor);
-    drawBlock(center.translate(0, cell), sunColor);
-
-    // Rays
-    drawBlock(center.translate(0, -2 * cell), rayColor);
-    drawBlock(center.translate(0, 2 * cell), rayColor);
-    drawBlock(center.translate(2 * cell, 0), rayColor);
-    drawBlock(center.translate(-2 * cell, 0), rayColor);
-    drawBlock(center.translate(cell, -cell), rayColor);
-    drawBlock(center.translate(-cell, -cell), rayColor);
-    drawBlock(center.translate(cell, cell), rayColor);
-    drawBlock(center.translate(-cell, cell), rayColor);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class _BlockChip extends StatelessWidget {
   const _BlockChip({
     required this.label,
@@ -1181,9 +1330,23 @@ class _BlockChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.6)),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.28),
+            color.withOpacity(0.12),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.7), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 6,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Text(
         label,
