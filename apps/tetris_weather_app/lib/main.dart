@@ -100,6 +100,12 @@ class _SunnyWeatherPageState extends State<SunnyWeatherPage> {
                             letterSpacing: 0.2,
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        _InfoPager(
+                          temps: temps,
+                          accent: accent,
+                          highlight: highlight,
+                        ),
                         const SizedBox(height: 10),
                         const _CloudBadge(),
                         const SizedBox(height: 16),
@@ -302,6 +308,525 @@ class _PixelBackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _InfoPager extends StatefulWidget {
+  const _InfoPager({
+    required this.temps,
+    required this.accent,
+    required this.highlight,
+  });
+
+  final List<double> temps;
+  final Color accent;
+  final Color highlight;
+
+  @override
+  State<_InfoPager> createState() => _InfoPagerState();
+}
+
+class _InfoPagerState extends State<_InfoPager> {
+  late final PageController _controller;
+  int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(viewportFraction: 0.9);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = [
+      _RetroInfoPage(
+        label: '当前温度',
+        value: '27',
+        unit: 'C',
+        color: widget.accent,
+        hint: '体感 26°C · 微风 2m/s',
+        icon: Icons.thermostat,
+      ),
+      _RetroInfoPage(
+        label: '今日湿度',
+        value: '46',
+        unit: '%',
+        color: widget.highlight,
+        hint: '舒适区间 40~60%',
+        icon: Icons.water_drop,
+      ),
+      _RetroInfoPage(
+        label: '紫外线',
+        value: '3',
+        unit: '',
+        color: const Color(0xFF8BD3FF),
+        hint: '中等 · 建议帽子/防晒',
+        icon: Icons.wb_sunny,
+      ),
+      _RetroInfoPage(
+        label: '未来24小时',
+        value: '24',
+        unit: 'h',
+        color: widget.accent,
+        hint: '温差 17~31°C · 晴朗',
+        graphic: _MiniBarForecast(
+          temps: widget.temps,
+          color: widget.accent,
+        ),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF3C4AC5),
+            Color(0xFF5060E0),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.12), width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 12,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 190,
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: pages.length,
+              onPageChanged: (i) => setState(() => _page = i),
+              itemBuilder: (context, index) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: pages[index],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _PageDots(
+            count: pages.length,
+            current: _page,
+            color: widget.accent,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PageDots extends StatelessWidget {
+  const _PageDots({
+    required this.count,
+    required this.current,
+    required this.color,
+  });
+
+  final int count;
+  final int current;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        count,
+        (i) => AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: i == current ? 26 : 12,
+          height: 8,
+          decoration: BoxDecoration(
+            color: i == current
+                ? color.withOpacity(0.9)
+                : Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white.withOpacity(0.25)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniBarForecast extends StatelessWidget {
+  const _MiniBarForecast({
+    required this.temps,
+    required this.color,
+  });
+
+  final List<double> temps;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxTemp = temps.reduce(max);
+    final minTemp = temps.reduce(min);
+    final range = max(maxTemp - minTemp, 1);
+
+    return SizedBox(
+      height: 64,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: temps.map((t) {
+          final normalized = (t - minTemp) / range;
+          final h = 20 + normalized * 40;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Container(
+                height: h,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(color: Colors.white.withOpacity(0.25)),
+                ),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    width: double.infinity,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.24),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(3),
+                        topRight: Radius.circular(3),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _RetroInfoPage extends StatelessWidget {
+  const _RetroInfoPage({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.color,
+    required this.hint,
+    this.icon,
+    this.graphic,
+  });
+
+  final String label;
+  final String value;
+  final String unit;
+  final Color color;
+  final String hint;
+  final IconData? icon;
+  final Widget? graphic;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF4458D0),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon ?? Icons.blur_on, color: Colors.white70, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.86),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const Spacer(),
+              _BlockChip(label: '滑动', color: Colors.white24),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Center(
+              child: graphic ??
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _PixelText(
+                        text: value,
+                        color: Colors.white,
+                        pixel: 10,
+                      ),
+                      const SizedBox(width: 8),
+                      _PixelText(
+                        text: unit,
+                        color: color,
+                        pixel: 6,
+                      ),
+                    ],
+                  ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            hint,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.78),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PixelText extends StatelessWidget {
+  const _PixelText({
+    required this.text,
+    required this.color,
+    this.pixel = 8,
+  });
+
+  final String text;
+  final Color color;
+  final double pixel;
+
+  @override
+  Widget build(BuildContext context) {
+    final chars = text.split('');
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < chars.length; i++) ...[
+          _PixelGlyph(
+            char: chars[i],
+            color: color,
+            pixel: pixel,
+          ),
+          if (i != chars.length - 1) SizedBox(width: pixel * 0.6),
+        ]
+      ],
+    );
+  }
+}
+
+class _PixelGlyph extends StatelessWidget {
+  const _PixelGlyph({
+    required this.char,
+    required this.color,
+    required this.pixel,
+  });
+
+  final String char;
+  final Color color;
+  final double pixel;
+
+  static const Map<String, List<String>> _glyphs = {
+    '0': [
+      '111',
+      '101',
+      '101',
+      '101',
+      '101',
+      '101',
+      '111',
+    ],
+    '1': [
+      '010',
+      '110',
+      '010',
+      '010',
+      '010',
+      '010',
+      '111',
+    ],
+    '2': [
+      '111',
+      '001',
+      '001',
+      '111',
+      '100',
+      '100',
+      '111',
+    ],
+    '3': [
+      '111',
+      '001',
+      '001',
+      '111',
+      '001',
+      '001',
+      '111',
+    ],
+    '4': [
+      '101',
+      '101',
+      '101',
+      '111',
+      '001',
+      '001',
+      '001',
+    ],
+    '5': [
+      '111',
+      '100',
+      '100',
+      '111',
+      '001',
+      '001',
+      '111',
+    ],
+    '6': [
+      '111',
+      '100',
+      '100',
+      '111',
+      '101',
+      '101',
+      '111',
+    ],
+    '7': [
+      '111',
+      '001',
+      '001',
+      '010',
+      '010',
+      '010',
+      '010',
+    ],
+    '8': [
+      '111',
+      '101',
+      '101',
+      '111',
+      '101',
+      '101',
+      '111',
+    ],
+    '9': [
+      '111',
+      '101',
+      '101',
+      '111',
+      '001',
+      '001',
+      '111',
+    ],
+    '%': [
+      '10001',
+      '1001',
+      '101',
+      '10',
+      '101',
+      '1001',
+      '10001',
+    ],
+    'C': [
+      '0110',
+      '1001',
+      '1000',
+      '1000',
+      '1000',
+      '1001',
+      '0110',
+    ],
+    'h': [
+      '100',
+      '100',
+      '111',
+      '101',
+      '101',
+      '101',
+      '101',
+    ],
+    ' ': [
+      '0',
+      '0',
+      '0',
+      '0',
+      '0',
+      '0',
+      '0',
+    ],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final pattern = _glyphs[char] ?? _glyphs[' ']!;
+    final width = pattern.first.length;
+    final height = pattern.length;
+
+    return SizedBox(
+      width: width * pixel,
+      height: height * pixel,
+      child: CustomPaint(
+        painter: _PixelGlyphPainter(
+          pattern: pattern,
+          color: color,
+          pixel: pixel,
+        ),
+      ),
+    );
+  }
+}
+
+class _PixelGlyphPainter extends CustomPainter {
+  const _PixelGlyphPainter({
+    required this.pattern,
+    required this.color,
+    required this.pixel,
+  });
+
+  final List<String> pattern;
+  final Color color;
+  final double pixel;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    for (int y = 0; y < pattern.length; y++) {
+      for (int x = 0; x < pattern[y].length; x++) {
+        if (pattern[y][x] == '1') {
+          final rect = Rect.fromLTWH(
+            x * pixel,
+            y * pixel,
+            pixel,
+            pixel,
+          );
+          canvas.drawRect(rect, paint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PixelGlyphPainter oldDelegate) {
+    return pattern != oldDelegate.pattern ||
+        color != oldDelegate.color ||
+        pixel != oldDelegate.pixel;
+  }
 }
 
 class _BoardSection extends StatelessWidget {
